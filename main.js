@@ -17,7 +17,7 @@ function createWindow() {
     center: true,
     resizable: true,
     frame: false, 
-    icon: path.join(__dirname, '256x256.png'),
+    icon: path.join(__dirname, '512x512.png'),
     transparent: true,
     autoHideMenuBar: true,
     webPreferences: {

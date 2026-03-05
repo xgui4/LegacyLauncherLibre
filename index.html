@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LegacyLauncher</title>
-    <link rel="icon" type="image/png" href="256x256.png">
+    <link rel="icon" type="image/png" href="512x512.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -139,14 +139,15 @@
     </div>
 
     <div class="modal-overlay" id="update-modal">
-        <div class="modal-box">
+        <div class="modal-box relative">
+            <div class="modal-close-btn" id="btn-close-update">×</div>
             <div class="modal-title">UPDATE AVAILABLE</div>
-            <p id="update-modal-text" style="color: #333; font-size: 22px; text-align: center; margin-bottom: 30px; text-shadow: 1px 1px 0 #fff; line-height: 1.4;">
+            <div id="update-modal-text" class="modal-body-text">
                 A new version is available. Would you like to update now?
-            </p>
-            <div class="flex flex-col gap-4 w-full">
-                <div class="btn-mc w-full" id="btn-confirm-update">UPDATE NOW</div>
-                <div class="btn-mc w-full" id="btn-skip-update">LATER (LAUNCH OLD)</div>
+            </div>
+            <div class="flex gap-4 w-full">
+                <div class="btn-mc flex-grow" id="btn-confirm-update">UPDATE NOW</div>
+                <div class="btn-mc flex-grow" id="btn-skip-update">LATER</div>
             </div>
         </div>
     </div>

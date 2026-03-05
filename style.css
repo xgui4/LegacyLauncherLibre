@@ -439,6 +439,23 @@ body {
     align-items: center;
     box-shadow: inset 4px 4px 0 #fff;
     animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 32px;
+    color: #444;
+    cursor: pointer;
+    transition: color 0.1s;
+    line-height: 1;
+}
+
+.modal-close-btn:hover {
+    color: #c42b1c;
+    text-shadow: 1px 1px 0 #fff;
 }
 
 @keyframes modalPop {
@@ -452,6 +469,20 @@ body {
     margin-bottom: 30px;
     text-shadow: 2px 2px 0 #fff;
     text-align: center;
+}
+
+.modal-body-text {
+    color: #333;
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 40px;
+    text-shadow: 1px 1px 0 #fff;
+    line-height: 1.6;
+    width: 100%;
+}
+
+.modal-body-text b {
+    color: #000;
 }
 
 .mc-input-group {

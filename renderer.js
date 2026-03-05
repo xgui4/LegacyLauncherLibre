@@ -304,12 +304,13 @@ async function launchGame() {
                 setProcessingState(true);
                 await handleElectronFlow(asset.browser_download_url);
                 setProcessingState(false);
-            } else {
+            } else if (choice === 'launch') {
                 setProcessingState(true);
                 updateProgress(100, "Launching Existing...");
                 await launchLocalClient();
                 setProcessingState(false);
             }
+            // if 'cancel', do nothing
         } else {
             setProcessingState(true);
             await handleElectronFlow(asset.browser_download_url);
@@ -325,6 +326,7 @@ async function promptUpdate(newTag) {
         const modal = document.getElementById('update-modal');
         const confirmBtn = document.getElementById('btn-confirm-update');
         const skipBtn = document.getElementById('btn-skip-update');
+        const closeBtn = document.getElementById('btn-close-update');
         const installedTag = await Store.get('installed_version_tag', "Unknown");
 
         document.getElementById('update-modal-text').innerHTML = 
@@ -340,11 +342,13 @@ async function promptUpdate(newTag) {
             setTimeout(() => modal.style.display = 'none', 300);
             confirmBtn.onclick = null;
             skipBtn.onclick = null;
+            closeBtn.onclick = null;
             resolve(result);
         };
 
         confirmBtn.onclick = () => cleanup('update');
         skipBtn.onclick = () => cleanup('launch');
+        closeBtn.onclick = () => cleanup('cancel');
     });
 }
 
@@ -367,26 +371,19 @@ async function checkForUpdatesManual() {
     // Prompt user to update/install; Update path will reinstall (delete existing LegacyClient)
     const choice = await promptUpdate(rel.tag_name);
     if (choice === 'update') {
-        // Delete existing LegacyClient folder if present to ensure clean install
-        try {
-            const extractDir = require('path').join(require('os').homedir(), 'Documents', 'LegacyClient');
-            if (require('fs').existsSync(extractDir)) {
-                require('fs').rmSync(extractDir, { recursive: true, force: true });
-            }
-        } catch (e) {
-            // ignore cleanup errors
-        }
         // Re-download and install (and launch, as install flow does)
+        // handleElectronFlow now manages clean installation while preserving user data
         setProcessingState(true);
         await handleElectronFlow(asset.browser_download_url);
         setProcessingState(false);
-    } else {
+    } else if (choice === 'launch') {
         // User chose to launch existing/older version
         setProcessingState(true);
         updateProgress(100, "Launching Existing...");
         await launchLocalClient();
         setProcessingState(false);
     }
+    // if 'cancel', do nothing
     updatePlayButtonText();
 }
 
@@ -478,15 +475,62 @@ async function handleElectronFlow(url) {
         const docDir = path.join(homeDir, 'Documents');
         const zipPath = path.join(docDir, TARGET_FILE);
         const extractDir = path.join(docDir, 'LegacyClient');
+        const backupDir = path.join(docDir, 'LegacyClient_Backup');
 
         updateProgress(5, "Downloading " + TARGET_FILE + "...");
         await downloadFile(url, zipPath);
 
         updateProgress(75, "Extracting Archive...");
+
+        // Files to preserve when updating
+        const preserveList = [
+            'options.txt',
+            'servers.txt',
+            'username.txt',
+            'settings.dat',
+            path.join('Windows64', 'GameHDD')
+        ];
+
+        if (fs.existsSync(extractDir)) {
+            // Backup preserved files
+            if (fs.existsSync(backupDir)) fs.rmSync(backupDir, { recursive: true, force: true });
+            fs.mkdirSync(backupDir, { recursive: true });
+            
+            for (const item of preserveList) {
+                const src = path.join(extractDir, item);
+                const dest = path.join(backupDir, item);
+                if (fs.existsSync(src)) {
+                    fs.mkdirSync(path.dirname(dest), { recursive: true });
+                    fs.renameSync(src, dest);
+                }
+            }
+            // Clean install: remove old client files
+            try {
+                fs.rmSync(extractDir, { recursive: true, force: true });
+            } catch (e) {
+                console.warn("Cleanup error:", e);
+            }
+        }
+
         if (!fs.existsSync(extractDir)) {
             fs.mkdirSync(extractDir, { recursive: true });
         }
+        
         await extractZip(zipPath, { dir: extractDir });
+
+        // Restore preserved files
+        if (fs.existsSync(backupDir)) {
+            for (const item of preserveList) {
+                const src = path.join(backupDir, item);
+                const dest = path.join(extractDir, item);
+                if (fs.existsSync(src)) {
+                    if (fs.existsSync(dest)) fs.rmSync(dest, { recursive: true, force: true });
+                    fs.mkdirSync(path.dirname(dest), { recursive: true });
+                    fs.renameSync(src, dest);
+                }
+            }
+            fs.rmSync(backupDir, { recursive: true, force: true });
+        }
 
         const execName = await Store.get('legacy_exec_path', DEFAULT_EXEC);
         const fullPath = path.join(extractDir, execName);
